@@ -1,0 +1,87 @@
+AFTERHIT DSP measurement suite
+
+== 0. Calibration (printed, used by the strip's model and the SPACE law) ==
+  wet peak / dry peak at wet gain 1:  0.229
+  default settings: wet peak 19.3 dB under the clap's peak
+  default settings: wet RMS (post-AFTER 200 ms) 22.4 dB under the clap's RMS (first 30 ms)
+
+== 1. Neutrality: HIT 0, SPACE 0, OUTPUT 0 is sample-exact ==
+  [PASS] output == input bit for bit (mono+stereo, 5 block sizes, TAIL/GATE/AFTER) 30 runs
+  [PASS] neutral is also exact at 44.1 and 96 kHz                           
+  [PASS] HIT automated 80% -> 0%: exact again once the 20 ms ramp ends      
+
+== 2. Post-hit timing ==
+  [PASS] one clap -> one onset                                              1
+  [PASS] AFTER 25 ms: wet silent from the hit to +24 ms                     -240.0 dBFS
+  [PASS] first audible wet (> -80 dBFS) arrives just after AFTER            28.1 ms after the hit
+  [PASS] wet clearly present after the gap                                  RMS -40.8 dBFS
+  [PASS] dry onset stays at the input sample (HIT 100, zero latency)        9600 vs 9600
+  [PASS] a single-sample click is detected and excites the reverb           tail RMS -44.7 dBFS
+  [PASS] AFTER 0 ms: wet starts in [0, 12] ms                               7.1 ms
+  [PASS] AFTER 10 ms: wet starts in [9, 18] ms                              13.1 ms
+  [PASS] AFTER 60 ms: wet starts in [59, 68] ms                             63.1 ms
+  [PASS] AFTER 100 ms: wet starts in [99, 108] ms                           103.1 ms
+
+== 3. TAIL and GATE are independent; the close is smooth ==
+  [PASS] GATE off: TAIL 0.5 -> 2.0 s stretches the 30 dB decay ~4x          0.240 -> 0.800 s
+  [PASS] TAIL 0.15 s really is short (30 dB decay)                          0.110 s
+  [PASS] TAIL 2 s fixed: GATE 10/40/70/100% shortens the audible window     800 220 120 60 ms
+  [PASS] GATE 100% (SYNC off): tight ~80 ms cut                             60 ms
+  [PASS] GATE 70% fixed: TAIL 1 -> 4 s leaves the close where it was        0.120 vs 0.120 s
+  [PASS] return gate never steps: max change per sample                     0.0038
+  [PASS] no click at the close: HF energy during close <= before            -32.9 vs -28.4 dB
+
+== 4. Retrigger and rolls ==
+  [PASS] two claps 150 ms apart -> two onsets                               2
+  [PASS] old tail ducked > 20 dB under the second attack                    -75.5 vs -32.7 dBFS
+  [PASS] wet reopens after AFTER with the new tail                          -29.3 vs -32.7 dBFS
+  [PASS] duck adds no step larger than the tail's own sample-to-sample motion 0.0623 vs 0.1282
+  [PASS] roll: 32 hits -> 32 onsets                                         32
+  [PASS] roll (defaults): steady wet within 3 dB of one hit's wet - no pile-up -0.0 dB
+  [PASS] roll, TAIL 6 s + GATE 40%: choke keeps it bounded                  +0.2 dB
+  [PASS] roll, TAIL 6 s + GATE OFF: natural build-up, bounded (physics, not runaway) +4.3 dB
+
+== 5. Detector ==
+  [PASS] silence -> no onsets (sensitivity 100%)                            
+  [PASS] steady noise -20 dBFS, 10 s, default: at most the start            1
+  [PASS] steady noise -20 dBFS, 10 s, sensitivity 100%                      1
+  [PASS] steady 200 Hz tone, 10 s, sensitivity 100%                         1
+  [PASS] soft hit (-45 dBFS): ignored at 0%, caught at 100%                 0 / 1
+  [PASS] left hit + right hit 3 ms later -> ONE linked event                
+  [PASS] 6 kicks with long bodies -> 6 onsets                               6
+  [PASS] 1/32 roll at 140 BPM (54 ms) -> 16 distinct hits                   16
+  [PASS] drum loop: same onset count at 44.1 / 48 / 96 kHz                  11 11 11 
+  [PASS] output bit-identical for block sizes 1 / 13 / 4096 (defaults)      
+
+== 6. Host edges: automation, tempo, rates, tiny blocks ==
+  [PASS] 44.1 kHz: every control automated per block -> finite, bounded     peak 2.9 dBFS
+  [PASS] 48.0 kHz: every control automated per block -> finite, bounded     peak 2.9 dBFS
+  [PASS] 96.0 kHz: every control automated per block -> finite, bounded     peak 4.0 dBFS
+  [PASS] mono, block size 1, HIT/SPACE 100%: finite                         
+  [PASS] TAIL 6 s: output reaches exact 0.0 after silence                   last non-zero at 10.9 s
+  [PASS] both tanks asleep afterwards (no CPU spent on silence)             
+  [PASS] SYNC 1/8: 250 ms at 120 BPM, glides to 214 ms at 140               250.0 / 214.3 ms
+
+== 7. Level, HIT, SPACE, TONE, WIDTH ==
+  loud kick + clap at -0.1 dBFS, HIT 100 SPACE 100: output peak 11.3 dBFS (no limiter; honest)
+  [PASS] loud input at full HIT/SPACE: finite                               
+  [PASS] HIT 100%: attack emphasis reaches ~+6 dB, never more               6.00 dB
+  [PASS] HIT 100%: the body 80-120 ms after the hit is not lifted           0.00 dB
+  [PASS] SPACE 10% is ~40 dB under 100% (no jump at the start)              40.0 dB
+  [PASS] SPACE is monotonic                                                 
+  [PASS] TONE 0 -> 100%: wet HF/total ratio rises                           0.5685 -> 1.7929
+  [PASS] WIDTH 0 / 100 / 150%: mono / wide / wider wet                      1.022 / 1.533
+
+== 8. GATE law ==
+  [PASS] GATE 0.1..100%: window never lengthens as the knob turns up (both modes) 
+  [PASS] GATE 0% = OFF                                                      
+  [PASS] default 40% = 1/8 (250 ms at 120 BPM)                              
+  [PASS] range: 1 bar .. 1/32                                               
+  [PASS] SYNC off at 100%: 80 ms                                            
+  [PASS] ms -> GATE% inverse round-trips                                    
+
+== 9. CPU (one stereo instance, 48 kHz, 512-sample blocks, defaults) ==
+  30 s of audio in 0.107 s: 0.36 % of one core (281x real time)
+  [PASS] faster than real time                                              
+
+59 checks, 0 failed

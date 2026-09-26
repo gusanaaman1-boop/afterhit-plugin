@@ -21,6 +21,6 @@ namespace ah
     //  GATE as the dial shows it: OFF, a division (SYNC on) or milliseconds.
     juce::String formatGate (float gatePct, bool sync, double bpm);
     //  GATE as the host shows it (the host knows nothing about SYNC):
-    //  "OFF" or "1/8 | 250 ms".
+    //  "OFF" or "1/8 (250 ms)".
     juce::String formatGateForHost (float gatePct);
 }

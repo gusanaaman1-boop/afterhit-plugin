@@ -1,0 +1,73 @@
+AFTERHIT 1.0.0 (5332165-dirty, 2026-09-26) - host-contract suite
+
+== 1. Parameter contract ==
+  [PASS] parameter count                                                  11
+  [PASS] every frozen ID resolves                                         
+  [PASS] every parameter named and automatable                            
+  [PASS] ranges and defaults match the spec (section 4)                   
+  [PASS] SYNC defaults On, bypass Off                                     
+  [PASS] GATE host text at default                                        1/8 (250 ms)
+  [PASS] GATE 0 reads OFF                                                 
+  [PASS] readable host values                                             1.0 s, -3.0 dB
+  [PASS] text round trip hit: 37%                                         -> 37.000
+  [PASS] text round trip tail: 0.45 s                                     -> 0.450
+  [PASS] text round trip tail: 3.2 s                                      -> 3.200
+  [PASS] text round trip after: 12 ms                                     -> 12.000
+  [PASS] text round trip output: -6.5 dB                                  -> -6.500
+  [PASS] text round trip width: 140%                                      -> 140.000
+  [PASS] text round trip gate: 1/8 (250 ms)                               -> 42.150
+  [PASS] text round trip gate: 1/32 (80 ms)                               -> 97.400
+  [PASS] typing '1/16' into GATE selects 1/16                             
+  [PASS] typing '120 ms' into GATE = 120 ms window                        
+
+== 2. Buses, latency, tail ==
+  [PASS] mono -> mono supported                                           
+  [PASS] stereo -> stereo supported                                       
+  [PASS] mono -> stereo rejected (in = out)                               
+  [PASS] 5.1 rejected                                                     
+  [PASS] reported latency 0 samples                                       0
+  [PASS] tail length covers TAIL (for offline bounce)                     7.33 s
+  [PASS] host bypass is the plug-in's bypass parameter                    
+
+== 3. Neutral and bypass through the processor ==
+  [PASS] Neutral preset, mono, 44.1 kHz, varying blocks: exact            
+  [PASS] Neutral preset, mono, 96.0 kHz, varying blocks: exact            
+  [PASS] Neutral preset, stereo, 44.1 kHz, varying blocks: exact          
+  [PASS] Neutral preset, stereo, 96.0 kHz, varying blocks: exact          
+  [PASS] bypass on: output == input once the 10 ms crossfade ends         
+
+== 4. State and programs ==
+  [PASS] every parameter survives save -> load                            
+  [PASS] ADVANCED open/closed survives save -> load                       
+  [PASS] re-sent program number after load leaves restored values alone   
+  [PASS] 7 factory programs                                               7
+  [PASS] program names                                                    Wide Clap, Tight Kick, Short Snare, Perc Room, Dub Hit, Big Fill, Neutral
+  [PASS] a fresh instance IS 'Wide Clap' (program 0 = the defaults)       
+  [PASS] host program change applies Tight Kick, keeps OUTPUT             
+  [PASS] Neutral zeroes HIT, SPACE, OUTPUT                                
+  [PASS] garbage state blob leaves defaults intact                        
+
+== 5. Audio thread: no allocation, tempo, telemetry ==
+  [PASS] processBlock allocates nothing (5 block sizes, editor open, automation) 0
+  [PASS] host tempo 140 BPM reaches the engine                            
+  [PASS] telemetry: hits captured for the strip                           7 events
+  [PASS] no host tempo: stable 120 BPM fallback, flagged                  
+
+== 6. Editor ==
+  [PASS] editor created                                                   
+  [PASS] closed size 640 x 226                                            640 x 226
+  [PASS] four main dials are 58-64 px                                     60
+  [PASS] ADVANCED open: 285-310 px tall                                   302
+  [PASS] opening ADVANCED does not move or shrink the four dials          
+  [PASS] drawer state stored in the processor                             
+  [PASS] closing restores the compact size                                
+  [PASS] default read-outs: 20% / 28% / 1.0 s / 1/8                       20% / 28% / 1.0 s / 1/8
+  [PASS] preset selector shows WIDE CLAP                                  WIDE CLAP
+  [PASS] an edited preset is marked with *                                WIDE CLAP *
+  [PASS] SYNC off: GATE reads 250 ms                                      250 ms
+  [PASS] GATE 0 reads OFF                                                 
+  [PASS] host automation shows on the dial                                64%
+  [PASS] a new editor opens with ADVANCED as it was left                  
+  [PASS] 20 editor open/close cycles while processing                     
+
+58 checks, 0 failed

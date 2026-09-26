@@ -1,0 +1,104 @@
+#  AFTERHIT - the Windows build, on a machine that has a Windows compiler.
+#
+#  Produces the raw AFTERHIT.vst3 bundle and the standalone .exe, and refuses
+#  to upload either unless both measurement suites pass under MSVC. The Mac
+#  proves the DSP with clang; only this proves it compiles and behaves with
+#  Microsoft's compiler.
+#
+#  Nothing here starts by itself: run it from the Actions tab ("Run workflow")
+#  or by pushing a v* tag. GitHub-hosted runners only run for free on PUBLIC
+#  repositories; "self-hosted" uses your own Windows machine and costs nothing.
+
+name: Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "Where to build"
+        type: choice
+        default: windows-2022
+        options: [windows-2022, windows-latest, self-hosted]
+  push:
+    tags: ["v*"]
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # JUCE 9, pinned - the same commit the Mac build uses.
+  JUCE_COMMIT: 857aab9c4eb3084af639a380a693dcec7d728b73
+
+jobs:
+  build:
+    runs-on: ${{ inputs.runner || 'windows-2022' }}
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out AFTERHIT
+        uses: actions/checkout@v4
+
+      # Into ./JUCE, CMakeLists' last fallback - never over a person's ~/JUCE.
+      - name: Check out JUCE (pinned)
+        uses: actions/checkout@v4
+        with:
+          repository: juce-framework/JUCE
+          ref: ${{ env.JUCE_COMMIT }}
+          path: JUCE
+          fetch-depth: 1
+
+      - name: Configure
+        shell: pwsh
+        run: |
+          cmake -S . -B build -A x64 -DAH_COPY_AFTER_BUILD=OFF
+          if ($LASTEXITCODE -ne 0) { throw "configure failed" }
+
+      - name: Build the plug-in and both test suites
+        shell: pwsh
+        run: |
+          cmake --build build --config Release `
+                --target AfterHit_VST3 AfterHit_Standalone AfterHitTests AfterHitHostTests `
+                --parallel
+          if ($LASTEXITCODE -ne 0) { throw "build failed" }
+
+      # Built is not the same as present: check the payload inside the bundle.
+      - name: Check the artefacts exist
+        shell: pwsh
+        run: |
+          $need = @(
+            "build\AfterHit_artefacts\Release\VST3\AFTERHIT.vst3\Contents\x86_64-win\AFTERHIT.vst3",
+            "build\AfterHit_artefacts\Release\Standalone\AFTERHIT.exe"
+          )
+          $missing = @($need | Where-Object { -not (Test-Path $_) })
+          if ($missing.Count -gt 0) {
+            $missing | ForEach-Object { Write-Host "  MISSING  $_" }
+            throw "the build reported success but artefacts are missing"
+          }
+          $need | ForEach-Object { Write-Host "  ok  $_" }
+
+      - name: DSP measurement suite
+        shell: pwsh
+        run: |
+          .\build\AfterHitTests_artefacts\Release\AfterHitTests.exe
+          if ($LASTEXITCODE -ne 0) { throw "DSP checks failed" }
+
+      - name: Host-contract suite
+        shell: pwsh
+        run: |
+          .\build\AfterHitHostTests_artefacts\Release\AfterHitHostTests.exe
+          if ($LASTEXITCODE -ne 0) { throw "host checks failed" }
+
+      - name: Upload the VST3
+        uses: actions/upload-artifact@v4
+        with:
+          name: AFTERHIT-windows-VST3
+          path: build/AfterHit_artefacts/Release/VST3/AFTERHIT.vst3/**
+          if-no-files-found: error
+
+      - name: Upload the standalone
+        uses: actions/upload-artifact@v4
+        with:
+          name: AFTERHIT-windows-standalone
+          path: build/AfterHit_artefacts/Release/Standalone/AFTERHIT.exe
+          if-no-files-found: error

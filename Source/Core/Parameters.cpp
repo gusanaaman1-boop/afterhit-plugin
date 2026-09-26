@@ -37,8 +37,8 @@ namespace ah
     {
         if (law::gateIsOff (gatePct))
             return "OFF";
-        return juce::String (law::kDivisions[law::gateDivisionIndex (gatePct)].name) + " | "
-             + formatMs (law::gateReferenceMs (gatePct));
+        return juce::String (law::kDivisions[law::gateDivisionIndex (gatePct)].name) + " ("
+             + formatMs (law::gateReferenceMs (gatePct)) + ")";
     }
 
     namespace
@@ -51,7 +51,7 @@ namespace ah
             if (u.isEmpty() || u.startsWith ("OFF"))
                 return 0.0f;
             //  A division name: land in the middle of that division's band.
-            const auto head = u.upToFirstOccurrenceOf ("|", false, false).trim().toLowerCase();
+            const auto head = u.upToFirstOccurrenceOf ("(", false, false).trim().toLowerCase();
             for (int i = 0; i < law::kNumDivisions; ++i)
                 if (head == juce::String (law::kDivisions[i].name))
                 {
@@ -113,8 +113,10 @@ namespace ah
         p.push_back (std::make_unique<P> (ver (id::sensitivity), "Sensitivity", pct (100.0f), law::kSensDef, pctAttr));
         p.push_back (std::make_unique<P> (ver (id::tone),  "Tone",  pct (100.0f), law::kToneDef, pctAttr));
         p.push_back (std::make_unique<P> (ver (id::width), "Width", pct (law::kWidthMax), law::kWidthDef, pctAttr));
-        p.push_back (std::make_unique<juce::AudioParameterBool> (ver (id::sync), "Sync", true,
-            juce::AudioParameterBoolAttributes().withStringFromValueFunction ([] (bool v, int) { return juce::String (v ? "On" : "Off"); })));
+        //  A two-item choice, not a bool: JUCE's bool keeps an unsnapped
+        //  normalised value from the host (0.6 stays 0.6), which then survives
+        //  a state restore. A choice always quantises.
+        p.push_back (std::make_unique<juce::AudioParameterChoice> (ver (id::sync), "Sync", juce::StringArray { "Off", "On" }, 1));
         p.push_back (std::make_unique<P> (ver (id::output), "Output",
             juce::NormalisableRange<float> (law::kOutMin, law::kOutMax, 0.0f), 0.0f,
             A().withStringFromValueFunction ([] (float v, int) { return formatDb (v); })

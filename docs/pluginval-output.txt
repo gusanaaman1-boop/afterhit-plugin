@@ -1,0 +1,10 @@
+using /Users/gussa/Applications/pluginval.app/Contents/MacOS/pluginval
+pluginval - 1.0.4
+
+== AFTERHIT.vst3 ==
+  SUCCESS at strictness 10
+
+== AFTERHIT.component ==
+  SUCCESS at strictness 10
+
+both formats pass

@@ -42,6 +42,18 @@ namespace ah::presets
             p->setValueNotifyingHost (p->convertTo0to1 (plain));
     }
 
+    //  Do the current parameters still equal preset i? (The selector marks
+    //  an edited preset with " *".)
+    inline bool matches (int i, const juce::AudioProcessorValueTreeState& s)
+    {
+        const auto& p = kPresets[i];
+        auto near = [&s] (const char* pid, float v, float tol) { return std::abs (s.getRawParameterValue (pid)->load() - v) <= tol; };
+        return near (id::hit, p.hit, 0.05f) && near (id::space, p.space, 0.05f) && near (id::tail, p.tail, 0.002f)
+            && near (id::gate, p.gate, 0.05f) && near (id::after, p.after, 0.05f) && near (id::sensitivity, p.sens, 0.05f)
+            && near (id::tone, p.tone, 0.05f) && near (id::width, p.width, 0.05f) && near (id::sync, p.sync ? 1.0f : 0.0f, 0.01f)
+            && (i != neutralIndex() || near (id::output, 0.0f, 0.01f));
+    }
+
     inline void apply (int i, juce::AudioProcessorValueTreeState& s)
     {
         const auto& p = kPresets[i];

@@ -141,23 +141,35 @@ namespace ah::ui
         // --- wet: model and (if any) capture -------------------------------------
         auto heightForDb = [&] (float db) { return juce::jlimit (0.0f, 1.0f, (db - kFloorDb) / kSpanDb) * (up - 4.0f); };
 
-        auto buildWet = [&] (auto&& dbAt) -> juce::Path
+        //  The bloom is drawn only where there is wet to show: it starts at
+        //  AFTER and ends where it has faded into the floor (or where the
+        //  capture has got to), so the baseline beyond stays neutral.
+        auto buildWet = [&] (auto&& dbAt, int lastBin) -> juce::Path
         {
-            juce::Path p;
-            p.startNewSubPath (xAfter, base);
-            for (int k = 0; k < timeAxis::kPostBins; ++k)
+            std::array<juce::Point<float>, timeAxis::kPostBins> pts;
+            int n = 0, lastVisible = -1;
+            for (int k = 0; k < juce::jmin (lastBin, timeAxis::kPostBins); ++k)
             {
-                const float u = ((float) k + 0.5f) / (float) timeAxis::kPostBins;
-                const float ms = timeAxis::fromUnit (u);
+                const float ms = timeAxis::fromUnit (((float) k + 0.5f) / (float) timeAxis::kPostBins);
                 if (ms < m.after) continue;
-                p.lineTo (xForMs (ms), base - heightForDb (dbAt (k, ms)));
+                const float h = heightForDb (dbAt (k, ms));
+                pts[(size_t) n] = { xForMs (ms), base - h };
+                if (h > 0.5f) lastVisible = n;
+                ++n;
             }
-            p.lineTo (a.getRight(), base);
+            juce::Path p;
+            if (lastVisible < 0)
+                return p;
+            p.startNewSubPath (xAfter, base);
+            for (int i = 0; i <= juce::jmin (lastVisible + 1, n - 1); ++i)
+                p.lineTo (pts[(size_t) i]);
+            p.lineTo (p.getCurrentPosition().x, base);
             return p;
         };
 
         auto fillAndStroke = [&] (const juce::Path& p, float alpha)
         {
+            if (p.isEmpty()) return;
             juce::Path area (p);
             area.closeSubPath();
             g.setGradientFill (juce::ColourGradient (colour::wet.withAlpha (0.30f * alpha), 0.0f, a.getY(),
@@ -167,7 +179,7 @@ namespace ah::ui
             g.strokePath (p, juce::PathStrokeType (1.8f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
         };
 
-        const auto modelPath = buildWet ([&] (int, float ms) { return modelWetDb (m, ms); });
+        const auto modelPath = buildWet ([&] (int, float ms) { return modelWetDb (m, ms); }, timeAxis::kPostBins);
         if (! haveCapture)
         {
             fillAndStroke (modelPath, 1.0f);
@@ -176,7 +188,7 @@ namespace ah::ui
         {
             const auto real = buildWet ([&] (int k, float) {
                 const int i = timeAxis::kPreBins + k;
-                return i < filled ? dbOf (wet[(size_t) i]) : -120.0f; });
+                return i < filled ? dbOf (wet[(size_t) i]) : -120.0f; }, filled - timeAxis::kPreBins);
             fillAndStroke (real, 1.0f);
             //  The current settings' model, faint, so a knob move shows at once.
             g.setColour (colour::wet.withAlpha (0.35f));

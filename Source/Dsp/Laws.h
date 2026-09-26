@@ -31,9 +31,9 @@ namespace ah::law
     //  Wet-return gain. Square law: 10 % is -40 dB of the full-scale wet level,
     //  so the first few percent fade the room in rather than switching it on.
     //  kSpaceFullGain is calibrated (docs/DESIGN.md) so that the default 28 %
-    //  puts a snare's tail roughly 12-16 dB under its hit - clearly audible,
+    //  keeps a real snare's tail peak ~7-8 dB under its hit and a short clap's ~19 dB under - clearly audible,
     //  never competing with the attack.
-    inline constexpr float kSpaceFullGain = 9.0f;
+    inline constexpr float kSpaceFullGain = 6.0f;
     inline float spaceGain (float spacePct)
     {
         const float s = std::clamp (spacePct, 0.0f, 100.0f) * 0.01f;

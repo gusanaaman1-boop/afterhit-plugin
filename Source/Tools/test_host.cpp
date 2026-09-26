@@ -162,7 +162,7 @@ int main()
         check (getParam (p, ah::id::sync) > 0.5f && getParam (p, ah::id::bypass) < 0.5f, "SYNC defaults On, bypass Off");
 
         auto text = [&] (const char* id, float v) { auto* rp = p.getState().getParameter (id); return rp->getText (rp->convertTo0to1 (v), 0); };
-        check (text (ah::id::gate, 40.0f) == "1/8 | 250 ms", "GATE host text at default", text (ah::id::gate, 40.0f));
+        check (text (ah::id::gate, 40.0f) == "1/8 (250 ms)", "GATE host text at default", text (ah::id::gate, 40.0f));
         check (text (ah::id::gate, 0.0f) == "OFF", "GATE 0 reads OFF");
         check (text (ah::id::tail, 1.0f) == "1.0 s" && text (ah::id::hit, 20.0f) == "20%" && text (ah::id::after, 25.0f) == "25 ms"
                && text (ah::id::output, -3.0f) == "-3.0 dB", "readable host values", text (ah::id::tail, 1.0f) + ", " + text (ah::id::output, -3.0f));
@@ -179,8 +179,8 @@ int main()
             //  GATE's text names a division + ms, which parses to the middle of
             //  that division's band: compare the division instead.
             const bool ok = juce::String (rt.id) == ah::id::gate
-                ? rp->getText (rp->convertTo0to1 (back), 0).upToFirstOccurrenceOf ("|", false, false)
-                    == t.upToFirstOccurrenceOf ("|", false, false)
+                ? rp->getText (rp->convertTo0to1 (back), 0).upToFirstOccurrenceOf ("(", false, false)
+                    == t.upToFirstOccurrenceOf ("(", false, false)
                 : std::abs (back - rt.v) <= rt.tol;
             char label[96]; std::snprintf (label, sizeof label, "text round trip %s: %s", rt.id, t.toRawUTF8());
             check (ok, label, "-> " + juce::String (back, 3));
@@ -373,6 +373,7 @@ int main()
 
         setParam (p, ah::id::sync, 0.0f);
         ed->pollNow();
+        check (ed->presetBox().getText() == "WIDE CLAP *", "an edited preset is marked with *", ed->presetBox().getText());
         check (ed->valueText (3) == "250 ms", "SYNC off: GATE reads 250 ms", ed->valueText (3));
         setParam (p, ah::id::gate, 0.0f);
         ed->pollNow();

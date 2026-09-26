@@ -117,6 +117,7 @@ AfterHitAudioProcessorEditor::AfterHitAudioProcessorEditor (AfterHitAudioProcess
     }
 
     syncButton.setClickingTogglesState (true);
+    syncButton.onStateChange = [this] { syncButton.setButtonText (syncButton.getToggleState() ? "ON" : "OFF"); };
     syncButton.setTooltip ("SYNC - GATE follows the host tempo in note divisions");
     addChildComponent (syncButton);
     syncAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (st, ah::id::sync, syncButton);
@@ -403,4 +404,7 @@ void AfterHitAudioProcessorEditor::timerCallback()
     const int prog = processor.getCurrentProgram();
     if (presets.getSelectedId() != prog + 1)
         presets.setSelectedId (prog + 1, juce::dontSendNotification);
+    const auto shown = ah::presets::name (prog).toUpperCase() + (ah::presets::matches (prog, processor.getState()) ? "" : " *");
+    if (presets.getText() != shown)
+        presets.setText (shown, juce::dontSendNotification);
 }

@@ -68,11 +68,17 @@ int main (int argc, char** argv)
     const float inPeak = all.getMagnitude (0, (int) inLen);
 
     juce::MidiBuffer midi;
+    const bool listOnsets = juce::SystemStats::getEnvironmentVariable ("AH_ONSETS", {}).isNotEmpty();
+    int seen = 0;
     for (juce::int64 pos = 0; pos < total; pos += 256)
     {
         const int n = (int) juce::jmin ((juce::int64) 256, total - pos);
         juce::AudioBuffer<float> view (all.getArrayOfWritePointers(), channels, (int) pos, n);
         p.processBlock (view, midi);
+        const int now = p.getTelemetry().onsets.load();
+        if (listOnsets && now != seen)
+            std::printf ("  onset near %.3f s\n", (double) pos / fs);
+        seen = now;
     }
 
     outFile.deleteFile();

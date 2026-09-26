@@ -105,7 +105,7 @@ namespace
 
             if (shot.audio)
             {
-                feedHit (processor, 0.25);
+                feedHit (processor, 1.2);
                 editor->pollNow();
                 feedHit (processor, 0.0);
             }
