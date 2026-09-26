@@ -4,3 +4,4 @@ JUCE/
 *.log
 .DS_Store
 renders/
+build-installer/
