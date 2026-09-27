@@ -1,0 +1,18 @@
+AFTERHIT 1.0 - by Gussa Naaman
+
+The hit stays sharp and close; a space blooms after its attack and closes
+before the next hit. Four controls: HIT, SPACE, TAIL, GATE.
+
+What is installed, and where:
+
+  VST3 plug-in    C:\Program Files\Common Files\VST3\AFTERHIT.vst3
+  Standalone      C:\Program Files\Naaman\AFTERHIT\AFTERHIT.exe
+  Manual          C:\Program Files\Naaman\AFTERHIT\AFTERHIT-MANUAL.md
+
+Close Cubase (or any DAW) before installing. After installing, Cubase finds
+AFTERHIT under Effects > Reverb.
+
+This installer is not code-signed. If Windows SmartScreen appears, choose
+"More info" and then "Run anyway".
+
+To remove it: Windows Settings > Apps > AFTERHIT > Uninstall.

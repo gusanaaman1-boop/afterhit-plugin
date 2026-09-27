@@ -48,6 +48,14 @@ jobs:
           path: JUCE
           fetch-depth: 1
 
+      - name: Read the version from CMakeLists
+        id: ver
+        shell: pwsh
+        run: |
+          $line = Select-String -Path CMakeLists.txt -Pattern '^project\(AfterHit VERSION ([0-9.]+)' | Select-Object -First 1
+          if (-not $line) { throw "Could not read the version out of CMakeLists.txt" }
+          "version=$($line.Matches[0].Groups[1].Value)" >> $env:GITHUB_OUTPUT
+
       - name: Configure
         shell: pwsh
         run: |
@@ -89,16 +97,62 @@ jobs:
           .\build\AfterHitHostTests_artefacts\Release\AfterHitHostTests.exe
           if ($LASTEXITCODE -ne 0) { throw "host checks failed" }
 
-      - name: Upload the VST3
-        uses: actions/upload-artifact@v4
-        with:
-          name: AFTERHIT-windows-VST3
-          path: build/AfterHit_artefacts/Release/VST3/AFTERHIT.vst3/**
-          if-no-files-found: error
+      - name: Find or install Inno Setup 6
+        id: inno
+        shell: pwsh
+        run: |
+          $paths = @("${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "${env:ProgramFiles}\Inno Setup 6\ISCC.exe")
+          $iscc = $paths | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $iscc) { choco install innosetup --no-progress -y; $iscc = $paths | Where-Object { Test-Path $_ } | Select-Object -First 1 }
+          if (-not $iscc) { throw "Inno Setup 6 is not available." }
+          "iscc=$iscc" >> $env:GITHUB_OUTPUT
 
-      - name: Upload the standalone
+      - name: Pack the installer
+        shell: pwsh
+        run: |
+          $src  = "$pwd\build\AfterHit_artefacts\Release"
+          $icon = "$pwd\build\AfterHit_artefacts\JuceLibraryCode\icon.ico"
+          $a = @("/Q", "/DAppVersion=${{ steps.ver.outputs.version }}", "/DSrcRoot=$src")
+          if (Test-Path $icon) { $a += "/DAhIcon=$icon" }
+          $a += "packaging\AFTERHIT.iss"
+          & "${{ steps.inno.outputs.iscc }}" @a
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup refused (exit $LASTEXITCODE)" }
+          $exe = "dist\AFTERHIT-${{ steps.ver.outputs.version }}-windows.exe"
+          if ((Get-Item $exe).Length -lt 2MB) { throw "the installer is empty" }
+
+      # Built is not the same as working: install it for real, check what landed,
+      # uninstall it, check nothing is left.
+      - name: Install and uninstall it, for real
+        shell: pwsh
+        run: |
+          $exe = "dist\AFTERHIT-${{ steps.ver.outputs.version }}-windows.exe"
+          Start-Process -FilePath $exe -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait
+          $vst3 = "${env:CommonProgramFiles}\VST3\AFTERHIT.vst3\Contents\x86_64-win\AFTERHIT.vst3"
+          $app  = "${env:ProgramFiles}\Naaman\AFTERHIT\AFTERHIT.exe"
+          foreach ($f in @($vst3, $app)) { if (-not (Test-Path $f)) { throw "not installed: $f" } else { Write-Host "  ok  $f" } }
+          if ((Get-Item $vst3).Length -lt 1MB) { throw "the installed VST3 is too small to be real" }
+          $unins = Get-ChildItem "${env:ProgramFiles}\Naaman\AFTERHIT" -Filter "unins*.exe" | Select-Object -First 1
+          Start-Process -FilePath $unins.FullName -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait
+          Start-Sleep -Seconds 5
+          foreach ($f in @("${env:CommonProgramFiles}\VST3\AFTERHIT.vst3", $app)) { if (Test-Path $f) { throw "left behind: $f" } }
+          Write-Host "  installed and removed cleanly"
+
+      # One zip for delivery: installer + raw VST3 + manual.
+      - name: Assemble the delivery zip
+        shell: pwsh
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          $d = "dist\AFTERHIT-$v-Windows"
+          New-Item -ItemType Directory -Force -Path "$d\AFTERHIT.vst3" | Out-Null
+          Copy-Item "dist\AFTERHIT-$v-windows.exe" "$d\AFTERHIT-$v-Setup.exe"
+          Copy-Item -Recurse "build\AfterHit_artefacts\Release\VST3\AFTERHIT.vst3\*" "$d\AFTERHIT.vst3\"
+          Copy-Item README.md "$d\AFTERHIT-MANUAL.md"
+          Copy-Item docs\PARAMETERS.md "$d\PARAMETERS.md"
+          Compress-Archive -Path $d -DestinationPath "dist\AFTERHIT-$v-Windows-Setup.zip" -Force
+
+      - name: Upload the delivery zip
         uses: actions/upload-artifact@v4
         with:
-          name: AFTERHIT-windows-standalone
-          path: build/AfterHit_artefacts/Release/Standalone/AFTERHIT.exe
+          name: AFTERHIT-${{ steps.ver.outputs.version }}-Windows-Setup
+          path: dist/AFTERHIT-${{ steps.ver.outputs.version }}-Windows-Setup.zip
           if-no-files-found: error
