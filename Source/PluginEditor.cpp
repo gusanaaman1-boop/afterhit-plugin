@@ -175,7 +175,7 @@ void AfterHitAudioProcessorEditor::resized()
     const int w = getWidth();
 
     //  Top bar.
-    presets.setBounds (w / 2 - 94, 6, 188, 24);
+    presets.setBounds (w / 2 - 50, 6, 172, 24);   // right of centre: the wordmark + maker's mark sit left
     bypassButton.setBounds (w - gutter - 70, 6, 70, 24);
 
     timingStrip.setBounds (0, topBar, w, metric::strip);
@@ -215,7 +215,21 @@ void AfterHitAudioProcessorEditor::paint (juce::Graphics& g)
     drawLogoMark (g, { (float) gutter, 9.0f, 18.0f, 18.0f });
     g.setColour (colour::text);
     g.setFont (font (16.0f, true, 0.20f));
-    g.drawText ("AFTERHIT", juce::Rectangle<float> ((float) gutter + 28.0f, 0.0f, 160.0f, (float) topBar), juce::Justification::centredLeft, false);
+    {
+        const auto wordFont = font (16.0f, true, 0.20f);
+        g.setFont (wordFont);
+        const float wx = (float) gutter + 28.0f;
+        g.drawText ("AFTERHIT", juce::Rectangle<float> (wx, 0.0f, 160.0f, (float) topBar), juce::Justification::centredLeft, false);
+
+        //  Maker's mark after the wordmark, behind a hairline - as on ISO.
+        const float x0 = wx + juce::GlyphArrangement::getStringWidth (wordFont, "AFTERHIT") + 12.0f;
+        g.setColour (colour::hairline);
+        g.fillRect (juce::Rectangle<float> (x0, 10.0f, 1.0f, 16.0f));
+        drawNaamanMark (g, juce::Rectangle<float> (x0 + 9.0f, 7.0f, 22.0f, 22.0f));
+        g.setColour (colour::secondary);
+        g.setFont (font (9.5f, true, 0.22f));
+        g.drawText ("NAAMAN", juce::Rectangle<float> (x0 + 35.0f, 0.0f, 60.0f, (float) topBar), juce::Justification::centredLeft, false);
+    }
 
     // --- bands -----------------------------------------------------------------------
     const float rowY = (float) (topBar + strip);

@@ -37,6 +37,23 @@ namespace ah::ui
         }
     }
 
+    void drawNaamanMark (juce::Graphics& g, juce::Rectangle<float> b)
+    {
+        const float d = juce::jmin (b.getWidth(), b.getHeight());
+        auto box = b.withSizeKeepingCentre (d, d);
+        const float s = d / 40.0f;
+        auto at = [&box, s] (float x, float y) { return juce::Point<float> (box.getX() + x * s, box.getY() + y * s); };
+        const juce::Colour bone (0xffeae7e0), brass (0xffc9a86a);
+
+        g.setColour (bone.withAlpha (0.28f));
+        g.drawEllipse (box.reduced (1.75f * s), 1.0f * s);
+        g.setColour (bone);
+        g.drawLine ({ at (13.2f, 27.4f), at (13.2f, 12.6f) }, 1.5f * s);
+        g.drawLine ({ at (26.8f, 27.4f), at (26.8f, 12.6f) }, 1.5f * s);
+        g.setColour (brass);
+        g.drawLine ({ at (13.2f, 12.6f), at (26.8f, 27.4f) }, 1.5f * s);
+    }
+
     Look::Look()
     {
         setColour (juce::ComboBox::textColourId, colour::text);

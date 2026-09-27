@@ -53,6 +53,11 @@ namespace ah::ui
     //  follows it). Fills `bounds`.
     void drawLogoMark (juce::Graphics&, juce::Rectangle<float> bounds);
 
+    //  The maker's mark - Naaman's N in a circle, bone strokes and one brass
+    //  diagonal. Same geometry as ISO, FOUR COLOR and the website (a 40x40
+    //  box: verticals at x 13.2 / 26.8 from y 12.6 to 27.4, circle r 18.25).
+    void drawNaamanMark (juce::Graphics&, juce::Rectangle<float> bounds);
+
     //  Text with letter spacing, drawn in `area`.
     void drawTracked (juce::Graphics&, const juce::String&, juce::Rectangle<float> area,
                       juce::Font, juce::Justification);
