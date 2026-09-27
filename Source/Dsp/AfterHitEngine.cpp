@@ -311,8 +311,9 @@ namespace ah
             {
                 float rp = (float) prePos - preNow;
                 while (rp < 0.0f) rp += (float) preLen;
-                const int i0 = (int) rp;
+                int i0 = (int) rp;
                 const float fr = rp - (float) i0;
+                if (i0 >= preLen) i0 -= preLen;      // rounding can land on preLen exactly
                 const int i1 = i0 + 1 >= preLen ? 0 : i0 + 1;
                 const float p0 = pre[0][(size_t) i0] + fr * (pre[0][(size_t) i1] - pre[0][(size_t) i0]);
                 const float p1 = pre[1][(size_t) i0] + fr * (pre[1][(size_t) i1] - pre[1][(size_t) i0]);

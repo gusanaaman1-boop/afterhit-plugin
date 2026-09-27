@@ -5,3 +5,4 @@ JUCE/
 .DS_Store
 renders/
 build-installer/
+build-san/

@@ -144,8 +144,11 @@ namespace ah
                 const float d = (float) line.len - modDepth * 0.5f * (1.0f + std::sin (kTwoPi * ph));
                 float rp = (float) line.pos - d;
                 while (rp < 0.0f) rp += (float) size;
-                const int i0 = (int) rp;
+                //  Float rounding can land rp on exactly `size` (pos - d a hair
+                //  below zero, + size): wrap the index, never read past the end.
+                int i0 = (int) rp;
                 const float fr = rp - (float) i0;
+                if (i0 >= size) i0 -= size;
                 const int i1 = i0 + 1 >= size ? 0 : i0 + 1;
                 o = line.buf[(size_t) i0] + fr * (line.buf[(size_t) i1] - line.buf[(size_t) i0]);
             }
