@@ -10,6 +10,8 @@
 | pluginval 1.0.4, strictness 10 — AU | **SUCCESS** | same |
 | `auval -v aufx Afht Naam` | **AU VALIDATION SUCCEEDED** | [auval-output.txt](auval-output.txt) |
 | Deployment target (x86_64 slice) | macOS 10.13 | `otool -l` |
+| DSP + host suites under **ASan + UBSan** (Debug) | **59 / 59, 58 / 58, no reports** | `cmake -B build-san -DAH_SANITIZERS=ON` |
+| **Windows** (GitHub Actions, VS 2022 / MSVC, x64) | **59 / 59 + 58 / 58 pass**; installer built, installed, verified on disk, uninstalled clean | [run 36300498741](https://github.com/gusanaaman1-boop/afterhit-plugin/actions/runs/36300498741) |
 
 What the suites cover, mapped to spec section 7:
 
@@ -68,11 +70,20 @@ The agent cannot listen; these are for the owner's ears. Objective checks on
 them: onset counts match the material (the sidestick sample's second onset
 is a real second strike at +44 ms); the snare's wet is silent for 25 ms.
 
+## Windows — what the CI found
+
+The first two Windows runs failed one check the Mac passed: after a long
+tail the output never reached exact silence (on run 2 it sat at 0.1). Cause:
+the fractional delay reads (pre-delay, modulated tank lines) could round the
+index onto the buffer size — one past the end. The Mac read zeros there by
+luck; Windows read garbage into the feedback loop. A local ASan build
+reproduced it as a heap-buffer-overflow; fixed in commit "Fix out-of-bounds
+read…", ASan-clean, Windows green on the next run. Recursive states are also
+snapped to zero below −400 dB so x86 flush-to-zero cannot stall a one-pole.
+
 ## Not tested
 
-- **Windows**: no Windows machine here and GitHub Actions does not run for free
-  on this repo while it is private. The CI workflow is written
-  (`.github/workflows/windows.yml`) but has never run. No Windows binary exists.
-- **Cubase on Windows**: same reason.
+- **Cubase on Windows**: no Windows machine here — CI proves build, tests and
+  installer, not a DAW session.
 - Offline bounce inside Cubase: covered by the engine's offline renderer and
   `getTailLengthSeconds` (TAIL × 1.2 + AFTER + 0.1 s), not by a Cubase export.
