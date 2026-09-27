@@ -21,7 +21,8 @@ namespace ah
         float tick (float x, float g) noexcept
         {
             const float d = buf[(size_t) pos];
-            const float v = x + g * d;
+            float v = x + g * d;
+            if (v > -1.0e-20f && v < 1.0e-20f) v = 0.0f;   // never stall above zero (x86 FTZ)
             buf[(size_t) pos] = v;
             if (++pos >= len) pos = 0;
             return d - g * v;

@@ -27,6 +27,12 @@ namespace ah
         constexpr float kShFastAMs = 0.2f, kShSlowAMs = 12.0f, kShRelMs = 30.0f, kShSmoothMs = 1.0f;
 
         constexpr float kSendHpHz = 60.0f;
+
+        //  Recursive states are snapped to zero below -400 dB. Flush-to-zero
+        //  alone is not enough: on x86 a one-pole like y += c * (0 - y) can
+        //  stall on a tiny NORMAL value once c * y underflows to 0, and then
+        //  the output never reaches exact silence.
+        inline float snap (float v) noexcept { return std::abs (v) < 1.0e-20f ? 0.0f : v; }
         constexpr float kPreSlewPerSample = 0.05f;   // max pre-delay change, samples/sample
     }
 
@@ -227,8 +233,8 @@ namespace ah
             // --- detector ---------------------------------------------------------
             float p = stereo ? 0.5f * (x0 * x0 + x1 * x1) : x0 * x0;
             if (! std::isfinite (p)) p = 0.0f;
-            fastP += (p > fastP ? cFastA : cFastR) * (p - fastP);
-            slowP += (p > slowP ? cSlowA : cSlowR) * (p - slowP);
+            fastP = snap (fastP + (p > fastP ? cFastA : cFastR) * (p - fastP));
+            slowP = snap (slowP + (p > slowP ? cSlowA : cSlowR) * (p - slowP));
             const float ratio = fastP / (slowP + 1.0e-12f);
 
             if (refractory)
@@ -253,10 +259,10 @@ namespace ah
             float d0 = x0, d1 = x1;
             {
                 const float a = std::max (std::abs (x0), std::abs (x1));
-                envF += (a > envF ? cEnvFA : cEnvFR) * (a - envF);
-                envS += (envF > envS ? cEnvSA : cEnvSR) * (envF - envS);
+                envF = snap (envF + (a > envF ? cEnvFA : cEnvFR) * (a - envF));
+                envS = snap (envS + (envF > envS ? cEnvSA : cEnvSR) * (envF - envS));
                 const float att = std::clamp (envF / (envS + 1.0e-9f) - 1.0f, 0.0f, 1.0f);
-                attS += cAtt * (att - attS);
+                attS = snap (attS + cAtt * (att - attS));
                 const float hitDb = hitRamp.next();
                 if (hitDb != 0.0f)
                 {
@@ -283,8 +289,8 @@ namespace ah
                 const float h0 = cHp * (hpY[0] + xl0 - hpX[0]);
                 const float h1 = cHp * (hpY[1] + xl1 - hpX[1]);
                 hpX[0] = xl0; hpX[1] = xl1;
-                hpY[0] = std::isfinite (h0) ? h0 : 0.0f;
-                hpY[1] = std::isfinite (h1) ? h1 : 0.0f;
+                hpY[0] = std::isfinite (h0) ? snap (h0) : 0.0f;
+                hpY[1] = std::isfinite (h1) ? snap (h1) : 0.0f;
 
                 float tgt = 0.0f;
                 if (sendHold > 0) { --sendHold; tgt = 1.0f; }
@@ -315,8 +321,8 @@ namespace ah
             }
 
             // --- TONE (wet low-pass), WIDTH ----------------------------------------
-            toneY[0] += cTone * (r0 - toneY[0]);
-            toneY[1] += cTone * (r1 - toneY[1]);
+            toneY[0] = snap (toneY[0] + cTone * (r0 - toneY[0]));
+            toneY[1] = snap (toneY[1] + cTone * (r1 - toneY[1]));
             float w0 = toneY[0], w1 = toneY[1];
             {
                 const float width = widthRamp.next();

@@ -557,7 +557,8 @@ int main()
             const auto out = run (r, in, &e);
             size_t lastNonZero = 0;
             for (size_t i = 0; i < out.size(); ++i) if (out.l[i] != 0.0f || out.r[i] != 0.0f) lastNonZero = i;
-            check (lastNonZero < out.size() - (size_t) fs, "TAIL 6 s: output reaches exact 0.0 after silence", fmt ("last non-zero at %.1f s", (double) lastNonZero / fs));
+            char m[96]; std::snprintf (m, sizeof m, "last non-zero at %.1f s (final |x| %.2g)", (double) lastNonZero / fs, peakIn (out, out.size() - (size_t) fs, out.size()));
+            check (lastNonZero < out.size() - (size_t) fs, "TAIL 6 s: output reaches exact 0.0 after silence", m);
             check (e.isReverbAsleep(), "both tanks asleep afterwards (no CPU spent on silence)");
         }
 

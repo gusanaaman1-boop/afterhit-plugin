@@ -159,6 +159,7 @@ namespace ah
             //  Two-band decay: below the crossover the line loses exactly what
             //  TAIL asks for; above it, what TONE asks for.
             line.lp += xover * (o - line.lp);
+            if (std::abs (line.lp) < 1.0e-20f) line.lp = 0.0f;
             const float y = o;
             //  Taps: even lines to the left, odd to the right, alternating sign
             //  so the two sides are decorrelated.
